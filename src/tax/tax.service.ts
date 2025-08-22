@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaxDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TaxService {
@@ -15,19 +16,34 @@ export class TaxService {
   async findAll(pagination: PaginationQueryDto) {
     const { skip, limit, search, sortBy, sortOrder } = pagination;
 
-    return this.prisma.tax.findMany({
-      skip,
-      take: limit,
-      where: search
-        ? {
-            OR: [
-              { description: { contains: search, mode: 'insensitive' } },
-              { note: { contains: search, mode: 'insensitive' } },
-            ],
-          }
-        : {},
-      orderBy: sortBy ? { [sortBy]: sortOrder } : { date: 'desc' },
-    });
+    const where: Prisma.TaxWhereInput | undefined = search
+      ? {
+          OR: [
+            { title: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { comment: { contains: search, mode: Prisma.QueryMode.insensitive } },
+          ],
+        }
+      : undefined;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.tax.findMany({
+        skip,
+        take: limit,
+        where,
+        orderBy: sortBy ? { [sortBy]: sortOrder } : { date: 'desc' },
+      }),
+      this.prisma.tax.count({ where }),
+    ]);
+
+    return {
+      data: items,
+      meta: {
+        total,
+        page: pagination.page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   findOne(id: number) {

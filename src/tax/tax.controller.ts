@@ -6,51 +6,48 @@ import {
   Patch,
   Param,
   Delete,
-  ParseIntPipe,
   Query,
-  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TaxService } from './tax.service';
 import { CreateTaxDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
-import {PaginationQueryDto} from "./dto/pagination-query.dto"
-import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Tax')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD
 @Controller('tax')
 export class TaxController {
-  constructor(private readonly service: TaxService) {}
+  constructor(private readonly taxService: TaxService) {}
 
   @Post()
   create(@Body() dto: CreateTaxDto) {
-    return this.service.create(dto);
+    return this.taxService.create(dto);
   }
 
   @Get()
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  @ApiQuery({ name: 'search', required: false, example: 'VAT' })
+  @ApiQuery({ name: 'sortBy', required: false, example: 'title' })
+  @ApiQuery({ name: 'sortOrder', required: false, example: 'asc' })
   findAll(@Query() pagination: PaginationQueryDto) {
-    return this.service.findAll(pagination);
+    return this.taxService.findAll(pagination);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+    return this.taxService.findOne(id);
   }
 
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateTaxDto,
-  ) {
-    return this.service.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTaxDto) {
+    return this.taxService.update(id, dto);
   }
 
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
-    return this.service.remove(id);
+    return this.taxService.remove(id);
   }
 }
