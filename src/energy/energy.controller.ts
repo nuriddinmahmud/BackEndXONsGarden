@@ -8,15 +8,18 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { EnergyService } from './energy.service';
 import { CreateEnergyDto } from './dto/create-energy.dto';
 import { UpdateEnergyDto } from './dto/update-energy.dto';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationDto } from './dto/pagination-query.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Energy')
 @ApiBearerAuth()
+@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD qilish mumkin
 @Controller('energy')
 export class EnergyController {
   constructor(private readonly service: EnergyService) {}

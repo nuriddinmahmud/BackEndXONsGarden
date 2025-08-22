@@ -8,15 +8,18 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { DrainageService } from './drainage.service';
 import { CreateDrainageDto } from './dto/create-drainage.dto';
 import { UpdateDrainageDto } from './dto/update-drainage.dto';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PaginationDto } from './dto/pagination-query.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Drainage')
 @ApiBearerAuth()
+@UseGuards(AuthGuard('jwt')) 
 @Controller('drainage')
 export class DrainageController {
   constructor(private readonly service: DrainageService) {}
@@ -37,7 +40,10 @@ export class DrainageController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDrainageDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateDrainageDto,
+  ) {
     return this.service.update(id, dto);
   }
 

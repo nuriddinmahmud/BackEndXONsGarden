@@ -8,15 +8,18 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { TransportService } from './transport.service';
 import { CreateTransportDto } from './dto/create-transport.dto';
 import { UpdateTransportDto } from './dto/update-transport.dto';
 import { QueryTransportDto } from './dto/pagination-query.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Transport')
 @ApiBearerAuth()
+@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD
 @Controller('transport')
 export class TransportController {
   constructor(private readonly service: TransportService) {}
@@ -30,9 +33,18 @@ export class TransportController {
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   @ApiQuery({ name: 'search', required: false, example: '90A' })
-  @ApiQuery({ name: 'type', required: false, enum: ['TRACTOR','TRUCK','CAR','VAN','OTHER'] })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['TRACTOR', 'TRUCK', 'CAR', 'VAN', 'OTHER'],
+  })
   @ApiQuery({ name: 'sortBy', required: false, example: 'createdAt' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc','desc'], example: 'desc' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
   findAll(@Query() q: QueryTransportDto) {
     return this.service.findAll(q);
   }
@@ -43,7 +55,10 @@ export class TransportController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTransportDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTransportDto,
+  ) {
     return this.service.update(id, dto);
   }
 

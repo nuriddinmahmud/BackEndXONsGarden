@@ -1,14 +1,25 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { OilService } from './oil.service';
 import { CreateOilDto } from './dto/create-oil.dto';
 import { UpdateOilDto } from './dto/update-oil.dto';
 import { PaginationDto } from './dto/pagination-query.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Oil')
 @ApiBearerAuth()
+@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD ishlaydi
 @Controller('oil')
 export class OilController {
   constructor(private readonly service: OilService) {}
@@ -21,7 +32,11 @@ export class OilController {
   @Get()
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['date', 'liters', 'price', 'note', 'createdAt'] })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['date', 'liters', 'price', 'note', 'createdAt'],
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'dateFrom', required: false })

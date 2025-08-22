@@ -1,14 +1,25 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FoodService } from './food.service';
 import { CreateFoodDto } from './dto/create-food.dto';
 import { UpdateFoodDto } from './dto/update-food.dto';
 import { PaginationDto } from './dto/pagination-query.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Food')
 @ApiBearerAuth()
+@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD qilish mumkin
 @Controller('food')
 export class FoodController {
   constructor(private readonly service: FoodService) {}
@@ -21,7 +32,11 @@ export class FoodController {
   @Get()
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['date', 'amount', 'shopName', 'comment', 'createdAt'] })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['date', 'amount', 'shopName', 'comment', 'createdAt'],
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'shopName', required: false })
@@ -39,7 +54,10 @@ export class FoodController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFoodDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFoodDto,
+  ) {
     return this.service.update(id, dto);
   }
 

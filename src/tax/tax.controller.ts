@@ -8,15 +8,18 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { TaxService } from './tax.service';
 import { CreateTaxDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
 import { PaginationDto } from './dto/pagination-query.dto';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Tax')
 @ApiBearerAuth()
+@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD
 @Controller('tax')
 export class TaxController {
   constructor(private readonly service: TaxService) {}
@@ -39,7 +42,10 @@ export class TaxController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTaxDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTaxDto,
+  ) {
     return this.service.update(id, dto);
   }
 

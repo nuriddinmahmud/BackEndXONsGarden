@@ -1,14 +1,25 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FertilizerService } from './fertilizer.service';
 import { CreateFertilizerDto } from './dto/create-fertilizer.dto';
 import { UpdateFertilizerDto } from './dto/update-fertilizer.dto';
 import { PaginationDto } from './dto/pagination-query.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Fertilizer')
 @ApiBearerAuth()
+@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD ishlaydi
 @Controller('fertilizer')
 export class FertilizerController {
   constructor(private readonly service: FertilizerService) {}
@@ -21,7 +32,18 @@ export class FertilizerController {
   @Get()
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['date', 'tonAmount', 'fertilizerType', 'machineCount', 'comment', 'createdAt'] })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: [
+      'date',
+      'tonAmount',
+      'fertilizerType',
+      'machineCount',
+      'comment',
+      'createdAt',
+    ],
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'machineCount', required: false })
@@ -39,7 +61,10 @@ export class FertilizerController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFertilizerDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFertilizerDto,
+  ) {
     return this.service.update(id, dto);
   }
 
