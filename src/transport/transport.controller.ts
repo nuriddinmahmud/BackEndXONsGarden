@@ -19,7 +19,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Transport')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt')) // 🔐 faqat token bilan CRUD
+@UseGuards(AuthGuard('jwt')) 
 @Controller('transport')
 export class TransportController {
   constructor(private readonly service: TransportService) {}
