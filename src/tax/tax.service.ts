@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaxDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
-import { PaginationDto } from './dto/pagination-query.dto';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
 
 @Injectable()
 export class TaxService {
@@ -12,7 +12,7 @@ export class TaxService {
     return this.prisma.tax.create({ data: dto });
   }
 
-  findAll(pagination: PaginationDto) {
+  findAll(pagination: PaginationQueryDto) {
     const { page, limit } = pagination;
     return this.prisma.tax.findMany({
       skip: (page - 1) * limit,

@@ -13,7 +13,7 @@ import {
 import { TaxService } from './tax.service';
 import { CreateTaxDto } from './dto/create-tax.dto';
 import { UpdateTaxDto } from './dto/update-tax.dto';
-import { PaginationDto } from './dto/pagination-query.dto';
+import {PaginationQueryDto} from "./dto/pagination-query.dto"
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -32,7 +32,7 @@ export class TaxController {
   @Get()
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  findAll(@Query() pagination: PaginationDto) {
+  findAll(@Query() pagination: PaginationQueryDto) {
     return this.service.findAll(pagination);
   }
 
