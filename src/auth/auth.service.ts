@@ -13,7 +13,6 @@ import { LoginAuthDto } from './dto/login-auth.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import * as bcrypt from 'bcrypt';
 import nodemailer, { Transporter } from 'nodemailer';
-
 import { UserRole, UserStatus } from '@prisma/client';
 
 const CODE_TTL_MIN = Number(process.env.EMAIL_CODE_TTL_MIN || 15);
@@ -22,10 +21,7 @@ const CODE_TTL_MIN = Number(process.env.EMAIL_CODE_TTL_MIN || 15);
 export class AuthService {
   private transporter: Transporter;
 
-  constructor(
-    private prisma: PrismaService,
-    private jwt: JwtService,
-  ) {
+  constructor(private prisma: PrismaService, private jwt: JwtService) {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
@@ -33,56 +29,52 @@ export class AuthService {
   }
 
   async register(dto: RegisterAuthDto) {
+    const exists = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (exists) {
+      throw new ConflictException('❌ Bu email allaqachon roʻyxatdan oʻtgan');
+    }
+
+    const hashed = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        email: dto.email,
+        password: hashed,
+        role: dto.role ?? UserRole.USER,
+        status: dto.status ?? UserStatus.ACTIVE,
+      },
+    });
+
     try {
-      const exists = await this.prisma.user.findUnique({
-        where: { email: dto.email },
-      });
-      if (exists)
-        throw new ConflictException('❌ Bu email allaqachon roʻyxatdan oʻtgan');
-
-      const hashed = await bcrypt.hash(dto.password, 10);
-      const user = await this.prisma.user.create({
-        data: {
-          name: dto.name,
-          email: dto.email,
-          password: hashed,
-          role: dto.role ?? UserRole.USER,
-          status: dto.status ?? UserStatus.ACTIVE,
-        },
-      });
-
       const code = await this.issueEmailCode(user.id);
       await this.sendVerifyMail(user.email, user.name, code);
-
-      return {
-        message: '✅ Roʻyxatdan oʻtdingiz. Emailga kod yuborildi.',
-        userId: user.id,
-      };
-    } catch (error: any) {
-      throw new BadRequestException(
-        error.message || '❌ Roʻyxatdan oʻtishda xatolik yuz berdi',
-      );
+    } catch (e) {
+      console.error('❌ Email yuborishda xatolik:', e.message);
     }
+
+    return {
+      message: '✅ Roʻyxatdan oʻtdingiz. Emailga kod yuborildi.',
+      userId: user.id,
+    };
   }
 
   async login(dto: LoginAuthDto) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { email: dto.email },
-      });
-      if (!user)
-        throw new UnauthorizedException('❌ Bunday foydalanuvchi topilmadi');
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (!user) throw new UnauthorizedException('❌ Bunday foydalanuvchi topilmadi');
 
-      const isMatch = await bcrypt.compare(dto.password, user.password);
-      if (!isMatch) throw new UnauthorizedException('❌ Parol notoʻgʻri');
+    const isMatch = await bcrypt.compare(dto.password, user.password);
+    if (!isMatch) throw new UnauthorizedException('❌ Parol notoʻgʻri');
 
-      if (!user.isVerified)
-        throw new ForbiddenException('❌ Email tasdiqlanmagan');
-
-      return this.generateToken(user);
-    } catch (error: any) {
-      throw new BadRequestException(error.message || '❌ Login bajarilmadi');
+    if (!user.isVerified) {
+      throw new ForbiddenException('❌ Email tasdiqlanmagan');
     }
+
+    return this.generateToken(user);
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
@@ -100,8 +92,10 @@ export class AuthService {
       },
       orderBy: { id: 'desc' },
     });
-    if (!record)
+
+    if (!record) {
       throw new ForbiddenException('❌ Kod notoʻgʻri yoki muddati tugagan');
+    }
 
     await this.prisma.$transaction([
       this.prisma.user.update({
@@ -120,16 +114,23 @@ export class AuthService {
   async resendCode(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new NotFoundException('❌ Foydalanuvchi topilmadi');
-    if (user.isVerified)
+
+    if (user.isVerified) {
       return { message: '✅ Foydalanuvchi allaqachon tasdiqlangan' };
+    }
 
     const code = await this.issueEmailCode(user.id);
-    await this.sendVerifyMail(user.email, user.name, code);
+    try {
+      await this.sendVerifyMail(user.email, user.name, code);
+    } catch (e) {
+      console.error('❌ Email yuborishda xatolik:', e.message);
+    }
+
     return { message: '✅ Kod qayta yuborildi' };
   }
 
   async getProfile(user: any) {
-    return await this.prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: { id: user.id },
       select: {
         id: true,
@@ -144,7 +145,7 @@ export class AuthService {
   }
 
   async getAllUsers() {
-    return await this.prisma.user.findMany({
+    return this.prisma.user.findMany({
       select: {
         id: true,
         name: true,
@@ -162,11 +163,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('❌ Foydalanuvchi topilmadi');
 
-    await this.prisma.emailVerification.deleteMany({
-      where: { userId: id },
-    });
-
+    await this.prisma.emailVerification.deleteMany({ where: { userId: id } });
     await this.prisma.user.delete({ where: { id } });
+
     return { message: '✅ Foydalanuvchi muvaffaqiyatli o‘chirildi' };
   }
 
@@ -177,6 +176,7 @@ export class AuthService {
     await this.prisma.emailVerification.create({
       data: { userId, code, expiresAt },
     });
+
     return code;
   }
 
@@ -191,7 +191,13 @@ export class AuthService {
         <p>Sizning tasdiqlash kodingiz:</p>
         <div style="font-size:24px;letter-spacing:3px;"><b>${code}</b></div>
         <p>Kod ${CODE_TTL_MIN} daqiqa ichida amal qiladi.</p>
-        ${frontUrl ? `<p><a href="${frontUrl}/verify?email=${encodeURIComponent(email)}">Tasdiqlash</a></p>` : ''}
+        ${
+          frontUrl
+            ? `<p><a href="${frontUrl}/verify?email=${encodeURIComponent(
+                email,
+              )}">Tasdiqlash</a></p>`
+            : ''
+        }
       </div>
     `;
 
@@ -215,7 +221,9 @@ export class AuthService {
       role: (user as any).role || UserRole.USER,
       isVerified: (user as any).isVerified ?? true,
     };
-    const access_token = this.jwt.sign(payload);
-    return { access_token, expiresIn: '365d' };
+
+    return {
+      access_token: this.jwt.sign(payload, { expiresIn: '365d' }),
+    };
   }
 }

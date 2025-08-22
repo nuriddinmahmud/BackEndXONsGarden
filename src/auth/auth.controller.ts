@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Get, Delete, Param, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Delete,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterAuthDto } from './dto/register-auth.dto';
@@ -16,45 +26,45 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post('register')
-  register(@Body() dto: RegisterAuthDto) {
-    return this.auth.register(dto);
+  async register(@Body() dto: RegisterAuthDto) {
+    return await this.auth.register(dto);
   }
 
   @Post('verify-email')
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.auth.verifyEmail(dto);
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return await this.auth.verifyEmail(dto);
   }
 
   @Post('resend-code')
-  resend(@Body() dto: ResendCodeDto) {
-    return this.auth.resendCode(dto.email);
+  async resend(@Body() dto: ResendCodeDto) {
+    return await this.auth.resendCode(dto.email);
   }
 
   @Post('login')
-  login(@Body() dto: LoginAuthDto) {
-    return this.auth.login(dto);
+  async login(@Body() dto: LoginAuthDto) {
+    return await this.auth.login(dto);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@Req() req: any) {
-    return this.auth.getProfile(req.user);
+  async me(@Req() req: any) {
+    return await this.auth.getProfile(req.user);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('users')
   @Roles(UserRole.ADMIN)
-  getAllUsers() {
-    return this.auth.getAllUsers();
+  async getAllUsers() {
+    return await this.auth.getAllUsers();
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete('users/:id')
   @Roles(UserRole.ADMIN)
-  deleteUser(@Param('id', ParseIntPipe) id: number) {
-    return this.auth.deleteUserById(id);
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+    return await this.auth.deleteUserById(id);
   }
 }
