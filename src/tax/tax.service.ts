@@ -12,12 +12,21 @@ export class TaxService {
     return this.prisma.tax.create({ data: dto });
   }
 
-  findAll(pagination: PaginationQueryDto) {
-    const { page, limit } = pagination;
+  async findAll(pagination: PaginationQueryDto) {
+    const { skip, limit, search, sortBy, sortOrder } = pagination;
+
     return this.prisma.tax.findMany({
-      skip: (page - 1) * limit,
+      skip,
       take: limit,
-      orderBy: { date: 'desc' },
+      where: search
+        ? {
+            OR: [
+              { description: { contains: search, mode: 'insensitive' } },
+              { note: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {},
+      orderBy: sortBy ? { [sortBy]: sortOrder } : { date: 'desc' },
     });
   }
 
