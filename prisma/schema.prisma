@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id          Int         @id @default(autoincrement())
+  name        String
+  email       String      @unique
+  password    String
+  role        UserRole    @default(USER)
+  status      UserStatus  @default(ACTIVE)
+  isVerified  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  emailVerifications EmailVerification[]
+}
+
+model EmailVerification {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  code       String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+
+enum TransportType {
+  TRACTOR
+  TRUCK
+  CAR
+  VAN
+  OTHER
+}
+
+model Worker {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  workerCount  Int
+  salaryPerOne Float
+  totalSalary  Float?
+  comment      String
+}
+
+model Transport {
+  id        Int           @id @default(autoincrement())
+  plate     String        @unique
+  type      TransportType
+  model     String?
+  note      String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model Drainage {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @default(now())
+  hoursWorked Float
+  totalSalary Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Energy {
+  id         Int      @id @default(autoincrement())
+  date       DateTime @default(now())
+  amountPaid Float
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Fertilizer {
+  id             Int      @id @default(autoincrement())
+  date           DateTime @default(now())
+  fertilizerType String
+  machineCount   String
+  tonAmount      Float
+  comment        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Food {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now())
+  shopName  String
+  amount    Float
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Oil {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now())
+  liters    Float
+  price     Float
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Remont {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @default(now())
+  description String
+  cost        Float
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Tax {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now())
+  title     String
+  amount    Float
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
